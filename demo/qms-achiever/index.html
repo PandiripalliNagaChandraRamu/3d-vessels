@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QMS Achiever — ZMI Holdings | Unreal 3D Product Demo</title>
+<meta name="description" content="Unreal-level Three.js product demo for ZMI QMS Achiever Self-Propelled Jack-Up Barge — 101.2×44×6.5m, 1950m² deck, twin 190T cranes, 80m water depth, DP-2, 500 POB"/>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm",
+    "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm"
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --zmi-red:#c41e1e; --zmi-dark:#0b1220; --zmi-ink:#0f1b2d; --glass:rgba(15,27,45,0.72); --line:rgba(255,255,255,0.08); --accent:#00d0ff; --accent2:#ff3b30; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:#02070e;color:#e6f0ff;font-family:Inter,system-ui,sans-serif}
+  canvas#canvas{display:block;width:100%;height:100%}
+  /* Top bar */
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(180deg,rgba(2,7,14,0.92),rgba(2,7,14,0.55) 70%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#ff3b30,#8a0f18);display:grid;place-items:center;font-weight:800;letter-spacing:-0.02em}
+  .brand h1{font-family:Space Grotesk,sans-serif;font-size:16px;line-height:1;letter-spacing:-0.02em}
+  .brand h1 span{font-weight:700;color:#fff}
+  .brand h1 i{font-style:normal;font-weight:500;color:#8aa0c0;font-size:11px;display:block;margin-top:2px;letter-spacing:0.12em;text-transform:uppercase}
+  .meta{display:flex;align-items:center;gap:10px}
+  .badge{font:600 11px JetBrains Mono,monospace;padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid var(--line);color:#cfe0ff}
+  .badge b{color:var(--accent)}
+  .cta{appearance:none;border:0;background:var(--zmi-red);color:#fff;font:700 12px Inter;padding:9px 14px;border-radius:999px;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 24px rgba(196,30,30,0.35)}
+  .cta:hover{filter:brightness(1.07)} .cta:active{transform:translateY(1px)}
+  /* Layout panels */
+  .shell{position:fixed;inset:0;top:61px;display:grid;grid-template-columns:340px 1fr 340px;gap:0;pointer-events:none}
+  .panel{pointer-events:auto;background:var(--glass);backdrop-filter:blur(14px) saturate(1.2);border:1px solid var(--line);overflow:auto}
+  .left{border-left:0;border-top:0;border-radius:0 16px 0 0}
+  .right{border-right:0;border-top:0;border-radius:16px 0 0 0}
+  .panel-head{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,rgba(15,27,45,0.96),rgba(15,27,45,0.75));backdrop-filter:blur(8px);padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+  .panel-head h2{font:800 12px Inter;letter-spacing:0.14em;text-transform:uppercase;color:#8fb0d8}
+  .panel-head p{font:500 11px Inter;color:#6e8bb0;margin-top:4px}
+  .panel-body{padding:12px 14px 16px}
+  /* Stat rows */
+  .stat{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 10px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);margin-bottom:8px}
+  .stat label{font:600 10px JetBrains Mono;letter-spacing:0.08em;text-transform:uppercase;color:#8fb0d8}
+  .stat b{font:700 13px Space Grotesk;color:#fff}
+  .stat small{grid-column:1 / -1;font:500 11px Inter;color:#9ab0cf;line-height:1.35}
+  .stat em{font:600 11px JetBrains Mono;color:var(--accent);background:rgba(0,208,255,0.12);padding:3px 6px;border-radius:999px;border:1px solid rgba(0,208,255,0.2)}
+  /* Hotspots legend */
+  .hot{display:flex;gap:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--line);margin-bottom:8px;cursor:pointer;transition:0.2s}
+  .hot:hover{background:rgba(0,208,255,0.07);border-color:rgba(0,208,255,0.25);transform:translateY(-1px)}
+  .hot .dot{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;font:800 12px JetBrains Mono;background:radial-gradient(circle at 30% 30%,#fff,#00d0ff);color:#001826;box-shadow:0 4px 16px rgba(0,208,255,0.4);flex:0 0 auto}
+  .hot h4{font:700 12px Inter;color:#fff}
+  .hot p{font:500 11px Inter;color:#8fb0d8;margin-top:2px;line-height:1.35}
+  /* Capability pills */
+  .pill{display:inline-flex;align-items:center;gap:6px;font:700 10px JetBrains Mono;letter-spacing:0.06em;text-transform:uppercase;padding:6px 9px;border-radius:999px;background:rgba(0,208,255,0.1);border:1px solid rgba(0,208,255,0.22);color:#bfeaff;margin:4px 6px 0 0}
+  .cap-card{padding:12px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.08);margin-bottom:10px}
+  .cap-card h4{font:800 11px Inter;letter-spacing:0.1em;text-transform:uppercase;color:#fff}
+  .cap-card p{font:500 11.5px Inter;color:#9ab0cf;margin-top:6px;line-height:1.45}
+  .cap-card .meta-line{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  /* Bottom controls */
+  .bottom{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:rgba(10,18,32,0.88);border:1px solid var(--line);backdrop-filter:blur(12px);box-shadow:0 12px 40px rgba(0,0,0,0.45);flex-wrap:wrap;justify-content:center;max-width:min(96vw,980px)}
+  .bgroup{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)}
+  .bgroup label{font:700 10px JetBrains Mono;letter-spacing:0.08em;text-transform:uppercase;color:#8fb0d8;padding-left:6px}
+  .toggle{width:44px;height:26px;border-radius:999px;background:#1a2a44;border:1px solid rgba(255,255,255,0.1);position:relative;cursor:pointer;transition:0.2s}
+  .toggle i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;background:#fff;transition:0.22s;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+  .toggle.on{background:var(--accent);border-color:rgba(0,208,255,0.5)} .toggle.on i{transform:translateX(18px);background:#001826}
+  .btn{appearance:none;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:#dbe8ff;font:700 11px Inter;padding:7px 10px;border-radius:999px;cursor:pointer;letter-spacing:0.04em}
+  .btn:hover{background:rgba(255,255,255,0.1)} .btn.primary{background:var(--accent);color:#001826;border-color:rgba(0,208,255,0.5);font-weight:800}
+  .btn.primary:hover{filter:brightness(1.05)} .btn.ghost{background:transparent}
+  .range{width:90px;accent-color:var(--accent)}
+  /* Dimension badges floating */
+  .dim{position:absolute;pointer-events:none;font:700 10px JetBrains Mono;letter-spacing:0.06em;padding:5px 7px;border-radius:999px;background:rgba(2,7,14,0.88);border:1px solid rgba(0,208,255,0.35);color:#bfeaff;backdrop-filter:blur(6px);box-shadow:0 6px 20px rgba(0,0,0,0.35);white-space:nowrap}
+  .dim b{color:#fff}
+  /* Loader */
+  .loader{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(900px 600px at 50% 20%,rgba(0,208,255,0.12),transparent 60%),linear-gradient(180deg,#02070e,#0b1220);z-index:20}
+  .loader-card{width:min(92vw,420px);padding:18px 16px;border-radius:18px;background:rgba(15,27,45,0.86);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(12px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .bar{height:6px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;margin-top:12px;border:1px solid rgba(255,255,255,0.06)}
+  .bar i{display:block;height:100%;width:38%;background:linear-gradient(90deg,var(--accent),#7af0ff);border-radius:999px;animation:load 1.1s ease-in-out infinite}
+  @keyframes load{0%{transform:translateX(-60%)}100%{transform:translateX(280%)}}
+  /* Responsive */
+  @media (max-width: 1100px){ .shell{grid-template-columns:300px 1fr 300px} }
+  @media (max-width: 900px){
+    .shell{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;top:61px}
+    .panel{border-radius:0}
+    .left{order:2;max-height:38vh} .right{order:3;max-height:38vh}
+    .bottom{bottom:8px;padding:8px;gap:6px}
+    .topbar{padding:10px 12px}
+  }
+  /* CSS2D labels */
+  .label{font:700 11px JetBrains Mono;letter-spacing:0.06em;padding:4px 7px;border-radius:999px;background:rgba(2,7,14,0.88);border:1px solid rgba(255,255,255,0.12);color:#fff;pointer-events:auto;cursor:pointer;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,0.35)}
+  .label small{color:var(--accent);font-weight:800}
+  .label:hover{border-color:var(--accent);background:rgba(0,208,255,0.14)}
+  /* Tooltip */
+  .tip{position:fixed;z-index:12;max-width:320px;padding:10px 12px;border-radius:12px;background:rgba(10,18,32,0.94);border:1px solid rgba(0,208,255,0.25);backdrop-filter:blur(10px);color:#dbe8ff;font:500 12px Inter;line-height:1.45;box-shadow:0 12px 32px rgba(0,0,0,0.4);display:none}
+</style>
+</head>
+<body>
+<div class="loader" id="loader">
+  <div class="loader-card">
+    <div style="display:flex;align-items:center;gap:10px;justify-content:center">
+      <div class="logo" style="width:38px;height:38px">ZMI</div>
+      <div style="text-align:left">
+        <div style="font:800 13px Inter;letter-spacing:0.08em;text-transform:uppercase;color:#8fb0d8">ZMI Holdings</div>
+        <div style="font:700 16px Space Grotesk;color:#fff;margin-top:2px">QMS Achiever — Loading Unreal Asset…</div>
+      </div>
+    </div>
+    <div style="font:500 11px Inter;color:#7ea0c3;margin-top:10px">Self-Propelled Jack-Up Barge • 101.2×44×6.5m • 1950m² • Twin 190T • DP-2 • 500 POB</div>
+    <div class="bar"><i></i></div>
+    <div style="font:600 10px JetBrains Mono;letter-spacing:0.08em;text-transform:uppercase;color:#5b7aa0;margin-top:8px" id="loadText">Initializing Three.js • PBR • Shadows • Ocean</div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">ZMI</div>
+    <h1><span>QMS ACHIEVER</span> <i>Self-Propelled Jack-Up Barge — Flagship JUB • ADNOC L&S</i></h1>
+  </div>
+  <div class="meta">
+    <span class="badge">IMO <b>9769946</b> • ABS • 2017</span>
+    <span class="badge" style="display:none" id="fpsBadge">60 FPS</span>
+    <button class="cta" id="demoBtn">▶ Product Demo</button>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- LEFT: SPECS -->
+  <aside class="panel left">
+    <div class="panel-head">
+      <h2>Dimensions & Specifications</h2>
+      <p>1 unit = 1 meter • True-scale PBR • Hover hotspots on model</p>
+    </div>
+    <div class="panel-body">
+      <div class="stat"><label>Hull (L × B × D)</label><em>PRIMARY</em><b>101.2 × 44.0 × 6.5 m</b><small>Hull only 82.3m • LOA 101.2m • Draft 4.05m inc. spudcans • DWT 3,954.88 MT • Var load 2,200 MT @ 5.0 / 7.5 MT/m²</small></div>
+      <div class="stat"><label>Deck</label><em>1,950 m²</em><b>Clear deck 1,950 m²</b><small>Marked usable area for modules up to 400T • Largest class in ZMI fleet (vs Titan 2,500m²)</small></div>
+      <div class="stat"><label>Legs & Spudcans</label><em>4× Lattice</em><b>107.0m ex spudcans / 90m usable</b><small>Triangular K-braced • Rectangular spudcans 11.43×9.6×2.9m • Jetting 50m³/hr 6MPa • 90m under hull</small></div>
+      <div class="stat"><label>Jacking System</label><em>72 pinions</em><b>Electric Rack & Pinion</b><small>0.8 m/min hull • 1.2 m/min leg (no load) • 18 pinions/leg • Storm 360t/pinion</small></div>
+      <div class="stat"><label>Water Depth</label><em>80 m max</em><b>Operational 80 m</b><small>Among deepest in fleet (vs 40-73m others) • Min 5m • Ideal GCC + North Sea</small></div>
+      <div class="stat"><label>Main Cranes</label><em>2× 190T</em><b>WMMP CCOC 4000-190-43-EH</b><small>190T @15m / 35T @43m API 2C Zone II • Twin pedestals starboard • 360° slew</small></div>
+      <div class="stat"><label>Aux Crane</label><em>1× 50T</em><b>WMMP AOC 500-500-25-EH</b><small>50T @10m / 10T @25m Zone II • Port side</small></div>
+      <div class="stat"><label>Helideck</label><em>22.2m Ø</em><b>Aluminium 12.6T • CAP437</b><small>Sikorsky S92A & S61N • ABS HELIDK(SRF) • ENVIRO-OS • CRC/CPS</small></div>
+      <div class="stat"><label>Propulsion & DP</label><em>DP-2</em><b>Kongsberg DP-2</b><small>3× Azimuth 1300kW Well FPP VFD + 3× Tunnel CPP 1100kW • Diesel-Electric 6× CAT3516B 1717kW • Emerg CAT C18 383kW</small></div>
+      <div class="stat"><label>Accommodation</label><em>500 max</em><b>250 → 500 POB</b><small>Hotel-style, dining, rec, laundry, medical • Upgradeable via PAMs • 4-deck superstructure</small></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+        <span class="pill">● Self-Elevating Unit A1</span><span class="pill">● AMS • DPS-2</span><span class="pill">● HELIDK(SRF)</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER implicit canvas -->
+  <div style="pointer-events:none"></div>
+
+  <!-- RIGHT: HIGHLIGHTS -->
+  <aside class="panel right">
+    <div class="panel-head">
+      <h2>Highlights & Capabilities</h2>
+      <p>Click hotspots • Product pitch ready</p>
+    </div>
+    <div class="panel-body">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="pill">⚡ Self-Propelled</span><span class="pill">🎯 DP-2 Kongsberg</span><span class="pill">🏗️ 190T ×2</span><span class="pill">🌊 80m WD</span><span class="pill">👥 500 POB</span>
+      </div>
+      <div class="hot" data-hot="hull"><div class="dot">1</div><div><h4>Hull & 1,950m² Deck</h4><p>101.2m LOA • 44m beam • 5–7.5 MT/m² loading • Heavy modules to 400T • Greenfield EPCI</p></div></div>
+      <div class="hot" data-hot="legs"><div class="dot">2</div><div><h4>4× K-Braced Lattice Legs</h4><p>107m legs • 90m usable • 11.43×9.6m spudcans • 80m WD • Electric rack & pinion 72 pinions</p></div></div>
+      <div class="hot" data-hot="cranes"><div class="dot">3</div><div><h4>Twin 190T WMMP Cranes</h4><p>190T @15m / 35T @43m • API 2C • 43m reach • Twin pedestals for parallel lifts</p></div></div>
+      <div class="hot" data-hot="dp"><div class="dot">4</div><div><h4>DP-2 & Thrusters</h4><p>3×1300kW azimuth + 3×1100kW bow tunnel • No tugs needed • Multiple moves • Lower fuel</p></div></div>
+      <div class="hot" data-hot="heli"><div class="dot">5</div><div><h4>Helideck & Accommodation</h4><p>22.2m ALU • S92/S61N • 250→500 POB • Hotel, med, rec • CAP437 • HELIDK(SRF)</p></div></div>
+      <div class="hot" data-hot="jacking"><div class="dot">6</div><div><h4>Jacking & Jetting</h4><p>0.8/1.2 m/min • 360t storm • Double jetting 50m³/hr • Rapid deployment</p></div></div>
+
+      <div style="margin-top:12px">
+        <div class="cap-card"><h4>🏗️ Greenfield Construction</h4><p>Install, hook-up & commission platforms & infra • Heavy lift to 400T via twin cranes</p><div class="meta-line"><span class="pill">Install</span><span class="pill">Hook-up</span><span class="pill">Commission</span></div></div>
+        <div class="cap-card"><h4>🔧 Brownfield Maintenance</h4><p>Upgrade existing infra • Extend asset life & integrity • Campaign maintenance</p><div class="meta-line"><span class="pill">Repair</span><span class="pill">Upgrade</span><span class="pill">Life Extension</span></div></div>
+        <div class="cap-card"><h4>⛽ Rigless Well Intervention</h4><p>Enhance/sustain production without drilling rig • Cost vs rig • Rapid moves</p><div class="meta-line"><span class="pill">Intervention</span><span class="pill">Production +</span></div></div>
+        <div class="cap-card"><h4>♻️ P&A / Decommissioning</h4><p>Well abandonment • Shut-in & dismantling in-situ • Enviro-OS class</p><div class="meta-line"><span class="pill">Abandon</span><span class="pill">Remove</span></div></div>
+        <div class="cap-card"><h4>🛏️ Pure Accommodation</h4><p>High-quality mobile accommodation • 500 POB • Standalone or integrated</p><div class="meta-line"><span class="pill">500 POB</span><span class="pill">Hotel</span><span class="pill">Medical</span></div></div>
+      </div>
+
+      <div style="margin-top:10px;padding:10px;border-radius:12px;background:rgba(0,208,255,0.06);border:1px solid rgba(0,208,255,0.18)">
+        <div style="font:700 10px JetBrains Mono;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent)">ZMI Fleet Context</div>
+        <div style="font:500 11px Inter;color:#9ab0cf;margin-top:6px;line-height:1.5">World’s largest fleet of self-propelled JUBs • 39 JUBs + 63 OSVs = 102 vessels (ADNOC L&S) • This demo is flagship class 1950m²/80m/500POB — sister: Gladiator 1×400T, Sentinel 2×300T. <a href="https://zmiglobal.com/fleet/qms-achiever/" target="_blank" style="color:var(--accent)">View product sheet →</a></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Bottom controls -->
+<div class="bottom" id="bottom">
+  <div class="bgroup">
+    <label>Rotation</label>
+    <div class="toggle" id="autoToggle"><i></i></div>
+    <span style="font:600 11px JetBrains Mono;color:#cfe0ff" id="autoLabel">Auto ON</span>
+    <input class="range" type="range" id="speedRange" min="0.1" max="2.5" step="0.1" value="0.6"/>
+    <span style="font:600 11px JetBrains Mono;color:#8fb0d8" id="speedVal">0.6×</span>
+  </div>
+  <div class="bgroup">
+    <button class="btn" data-view="bow">Bow</button>
+    <button class="btn" data-view="stern">Stern</button>
+    <button class="btn" data-view="port">Port</button>
+    <button class="btn" data-view="starboard">Starboard</button>
+    <button class="btn" data-view="top">Top</button>
+    <button class="btn" data-view="helideck">Helideck</button>
+    <button class="btn" data-view="crane">Crane</button>
+  </div>
+  <div class="bgroup">
+    <button class="btn" id="jackingBtn">Jacking: Elevated</button>
+    <button class="btn" id="craneBtn">Slew Cranes</button>
+    <button class="btn" id="explodeBtn">Exploded</button>
+    <button class="btn primary" id="orbitHint">Drag to rotate • Scroll to zoom</button>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+<canvas id="canvas"></canvas>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+import gsap from 'gsap';
+import { GUI } from 'lil-gui';
+
+// --- Scene ---
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance', stencil:false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x02070e);
+scene.fog = new THREE.Fog(0x02070e, 260, 720);
+
+const camera = new THREE.PerspectiveCamera(48, window.innerWidth/window.innerHeight, 0.1, 2000);
+camera.position.set(118, 58, 118);
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 18;
+controls.maxDistance = 380;
+controls.maxPolarAngle = Math.PI/2.02;
+controls.target.set(0, 8, 0);
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.6;
+
+// Lighting
+const sun = new THREE.DirectionalLight(0xffffff, 3.2);
+sun.position.set(140, 120, 70);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 520;
+sun.shadow.camera.left=-160; sun.shadow.camera.right=160; sun.shadow.camera.top=120; sun.shadow.camera.bottom=-120;
+sun.shadow.bias = -0.0006;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x7fb4ff, 0x02070e, 0.85));
+const fill = new THREE.DirectionalLight(0x8ec8ff, 0.9); fill.position.set(-80, 45, -90); scene.add(fill);
+
+// Env
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// Ocean
+const oceanGeo = new THREE.PlaneGeometry(1800, 1800, 1,1);
+const oceanMat = new THREE.MeshStandardMaterial({ color:0x0a1e2e, roughness:0.32, metalness:0.12 });
+const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+ocean.rotation.x = -Math.PI/2;
+ocean.position.y = -1.2;
+ocean.receiveShadow = true;
+scene.add(ocean);
+// subtle grid underwater
+const grid = new THREE.GridHelper(900, 60, 0x1a3a5a, 0x102a44);
+grid.position.y = -1.15;
+scene.add(grid);
+
+// Sky dome
+const skyGeo = new THREE.SphereGeometry(900, 32, 22);
+const skyMat = new THREE.MeshStandardMaterial({ color:0x0a1a2f, side:THREE.BackSide, emissive:0x061022, emissiveIntensity:0.6, roughness:1 });
+const sky = new THREE.Mesh(skyGeo, skyMat); scene.add(sky);
+
+// CSS2D renderer for labels
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position='fixed';
+labelRenderer.domElement.style.inset='0';
+labelRenderer.domElement.style.pointerEvents='none';
+document.body.appendChild(labelRenderer.domElement);
+
+// Postprocessing (unreal bloom + SSAO for depth)
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+ssaoPass.kernelRadius = 0.85; ssaoPass.minDistance = 0.001; ssaoPass.maxDistance = 0.08;
+composer.addPass(ssaoPass);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.22, 0.85, 0.85);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
+// --- Materials ---
+const matHull = new THREE.MeshStandardMaterial({ color:0x1a2a44, roughness:0.55, metalness:0.22 });
+const matHullDark = new THREE.MeshStandardMaterial({ color:0x0f1d33, roughness:0.62, metalness:0.18 });
+const matDeck = new THREE.MeshStandardMaterial({ color:0x8f9bb0, roughness:0.78, metalness:0.06 });
+const matDeckMark = new THREE.MeshStandardMaterial({ color:0xd9e6ff, roughness:0.9 });
+const matAccom = new THREE.MeshStandardMaterial({ color:0xeaf2ff, roughness:0.72, metalness:0.05 });
+const matAccomGlass = new THREE.MeshStandardMaterial({ color:0x0a1426, roughness:0.18, metalness:0.85, emissive:0x0a1a33, emissiveIntensity:0.25 });
+const matLeg = new THREE.MeshStandardMaterial({ color:0xcc2222, roughness:0.5, metalness:0.15 });
+const matLegSteel = new THREE.MeshStandardMaterial({ color:0x9aa8c0, roughness:0.42, metalness:0.45 });
+const matSpud = new THREE.MeshStandardMaterial({ color:0x6b1a1a, roughness:0.68, metalness:0.2 });
+const matCrane = new THREE.MeshStandardMaterial({ color:0xffd04a, roughness:0.55, metalness:0.18 });
+const matCraneDark = new THREE.MeshStandardMaterial({ color:0x1a1a1e, roughness:0.6, metalness:0.3 });
+const matHelideck = new THREE.MeshStandardMaterial({ color:0x1ed760, roughness:0.85, metalness:0.02 });
+const matThruster = new THREE.MeshStandardMaterial({ color:0x1a1a1e, roughness:0.45, metalness:0.6 });
+
+// --- Vessel Group ---
+const vessel = new THREE.Group();
+scene.add(vessel);
+
+// Helpers to create box with shadow
+function mkBox(w,h,d, mat, pos, rot){
+  const g=new THREE.BoxGeometry(w,h,d);
+  const m=new THREE.Mesh(g, mat);
+  m.castShadow=true; m.receiveShadow=true;
+  if(pos) m.position.copy(pos);
+  if(rot) m.rotation.set(rot.x||0, rot.y||0, rot.z||0);
+  return m;
+}
+function mkCyl(rt,rb,h, seg, mat, pos){
+  const g=new THREE.CylinderGeometry(rt,rb,h,seg);
+  const m=new THREE.Mesh(g, mat);
+  m.castShadow=true; m.receiveShadow=true;
+  if(pos) m.position.copy(pos);
+  return m;
+}
+
+// Hull: 101.2 x 6.5 x 44  (X length bow-stern, Z beam)
+const hullW=101.2, hullH=6.5, hullD=44;
+const hull = mkBox(hullW, hullH, hullD, matHull, new THREE.Vector3(0, hullH/2 -1.2, 0));
+vessel.add(hull);
+// Hull bottom dark belt
+const belt = mkBox(hullW+0.6, 1.2, hullD+0.6, matHullDark, new THREE.Vector3(0, 0.2, 0));
+vessel.add(belt);
+// Deck plate (on top of hull)
+const deck = mkBox(hullW-1.5, 0.35, hullD-1.5, matDeck, new THREE.Vector3(0, hullH-1.2+0.18, 0));
+vessel.add(deck);
+// Deck markings: centerline + safety stripes
+for(let i=-4;i<=4;i++){
+  const line = mkBox(hullW-10, 0.02, 0.35, matDeckMark, new THREE.Vector3(0, hullH-1.2+0.36, i*4.2));
+  vessel.add(line);
+}
+const safety = mkBox(hullW-2, 0.02, 1.2, new THREE.MeshStandardMaterial({color:0xffcc00, roughness:0.8}), new THREE.Vector3(0, hullH-1.2+0.36, hullD/2-1.8));
+vessel.add(safety);
+const safety2 = safety.clone(); safety2.position.z = -hullD/2+1.8; vessel.add(safety2);
+// Deck text: QMS ACHIEVER (as small extruded boxes imitation)
+const deckTextGroup=new THREE.Group(); deckTextGroup.position.set(0, hullH-1.2+0.37, 0);
+vessel.add(deckTextGroup);
+
+// Accommodation superstructure (forward, starboard side? Typically forward)
+const accomGroup=new THREE.Group();
+accomGroup.position.set(28, hullH-1.2+0.35, -9);
+vessel.add(accomGroup);
+const accomBase = mkBox(28, 14, 18, matAccom, new THREE.Vector3(0,7,0));
+accomGroup.add(accomBase);
+// decks
+for(let lv=0;lv<4;lv++){
+  const slab = mkBox(29, 0.45, 18.8, matHullDark, new THREE.Vector3(0, 3.2+ lv*3.1, 0));
+  accomGroup.add(slab);
+  // windows strip
+  const glass = mkBox(26, 1.6, 18.2, matAccomGlass, new THREE.Vector3(0, 3.9+ lv*3.1, 0));
+  accomGroup.add(glass);
+}
+// Bridge top
+const bridge = mkBox(18, 3.2, 12, matAccom, new THREE.Vector3(6, 14.6, 0));
+accomGroup.add(bridge);
+const bridgeGlass = mkBox(16, 1.8, 12.2, new THREE.MeshStandardMaterial({color:0x7ec8ff, roughness:0.12, metalness:0.9, transparent:true, opacity:0.9}), new THREE.Vector3(6,14.6,0));
+accomGroup.add(bridgeGlass);
+// Lifeboats 2x
+for(let side of [-1,1]){
+  const lb = mkBox(7, 2.2, 2.8, new THREE.MeshStandardMaterial({color:0xff3b30, roughness:0.6}), new THREE.Vector3(-9, 6.5, side*10.5));
+  accomGroup.add(lb);
+}
+
+// Helideck - at bow, elevated
+const heliGroup=new THREE.Group();
+heliGroup.position.set(44.5, hullH-1.2+2.8, 0);
+vessel.add(heliGroup);
+const heliDeck = mkCyl(11.1,11.1,0.35,32, matHelideck, new THREE.Vector3(0,0,0));
+heliDeck.rotation.y=0;
+heliGroup.add(heliDeck);
+// helideck markings: H
+const hMat=new THREE.MeshStandardMaterial({color:0xffffff});
+const hBar1=mkBox(6,0.05,1.2,hMat,new THREE.Vector3(0,0.22,0)); heliGroup.add(hBar1);
+const hBar2=mkBox(1.2,0.05,6,hMat,new THREE.Vector3(0,0.22,0)); heliGroup.add(hBar2);
+const heliSup1=mkCyl(0.35,0.35,2.8,8, matLegSteel, new THREE.Vector3(7, -1.4, 7)); heliGroup.add(heliSup1);
+const heliSup2=mkCyl(0.35,0.35,2.8,8, matLegSteel, new THREE.Vector3(7, -1.4, -7)); heliGroup.add(heliSup2);
+const heliSup3=mkCyl(0.35,0.35,2.8,8, matLegSteel, new THREE.Vector3(-7, -1.4, 7)); heliGroup.add(heliSup3);
+const heliSup4=mkCyl(0.35,0.35,2.8,8, matLegSteel, new THREE.Vector3(-7, -1.4, -7)); heliGroup.add(heliSup4);
+
+// Legs - 4 lattice legs at hull corners inset
+const legPositions=[
+  new THREE.Vector3( 34, 0,  15.5),
+  new THREE.Vector3( 34, 0, -15.5),
+  new THREE.Vector3(-34, 0,  15.5),
+  new THREE.Vector3(-34, 0, -15.5),
+];
+const legGroups=[];
+legPositions.forEach((pos, idx)=>{
+  const leg = new THREE.Group();
+  leg.position.copy(pos);
+  vessel.add(leg);
+  legGroups.push(leg);
+  // Triangular lattice: 3 chords in triangle, with K-bracing
+  const legLen=107; // ex spudcans
+  const legH=legLen;
+  const chordR=0.42;
+  // 3 chords positions in triangle (radius 2.2)
+  const triR=2.2;
+  const chords=[];
+  for(let c=0;c<3;c++){
+    const ang=c*120*Math.PI/180;
+    const cx=Math.cos(ang)*triR, cz=Math.sin(ang)*triR;
+    const chord=mkCyl(chordR,chordR,legH,10, matLegSteel, new THREE.Vector3(cx, legH/2 -1.2, cz));
+    leg.add(chord);
+    chords.push(new THREE.Vector3(cx,0,cz));
+  }
+  // K-bracing: every 6m add horizontal + diagonal
+  const seg=6;
+  const levels=Math.floor(legH/seg);
+  for(let lv=0; lv<levels; lv++){
+    const y= lv*seg + 1.5;
+    // horizontals between chords
+    for(let c=0;c<3;c++){
+      const a=chords[c], b=chords[(c+1)%3];
+      const mid=new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5);
+      const dist=a.distanceTo(b);
+      const brace=mkBox(dist,0.22,0.22, matLegSteel, new THREE.Vector3(mid.x, y, mid.z));
+      brace.rotation.y=Math.atan2(b.z-a.z, b.x-a.x);
+      leg.add(brace);
+    }
+    // K diagonal - add two diagonals per face offset
+    if(lv%2===0){
+      for(let c=0;c<3;c++){
+        const a=chords[c], b=chords[(c+1)%3];
+        const mid=new THREE.Vector3().addVectors(a,b).multiplyScalar(0.5);
+        const diag=mkBox(Math.sqrt(seg*seg + 3.0),0.18,0.18, matLegSteel, new THREE.Vector3(mid.x, y+seg/2, mid.z));
+        diag.rotation.z= 0.45;
+        diag.rotation.y=Math.atan2(b.z-a.z, b.x-a.x);
+        leg.add(diag);
+      }
+    }
+  }
+  // Jacking pinions housing at deck level
+  const jackHouse=mkBox(5.2, 3.0, 5.2, matHullDark, new THREE.Vector3(0, hullH-1.2+1.5, 0));
+  leg.add(jackHouse);
+  // Rack teeth visualization
+  const rack=mkBox(0.5, legH*0.88, 0.18, new THREE.MeshStandardMaterial({color:0xffd04a}), new THREE.Vector3(triR+0.3, legH/2 -1.2, 0));
+  leg.add(rack);
+  // Spudcan at bottom
+  const spudW=11.43, spudD=9.6, spudH=2.9;
+  const spud=mkBox(spudW, spudH, spudD, matSpud, new THREE.Vector3(0, -spudH/2 +0.2, 0));
+  leg.add(spud);
+  // spud bottom point
+  const spudPoint=mkCyl(spudW*0.35, 0.2, 1.2, 4, matSpud, new THREE.Vector3(0, -spudH/2 -0.6, 0));
+  spudPoint.rotation.y=Math.PI/4;
+  leg.add(spudPoint);
+});
+
+// Cranes - Twin WMMP 190T on starboard side
+function createCrane(x,z, scale=1){
+  const g=new THREE.Group();
+  g.position.set(x, hullH-1.2+0.35, z);
+  // Pedestal
+  const ped=mkCyl(1.9*scale, 2.1*scale, 5.2*scale, 16, matCrane, new THREE.Vector3(0,2.6*scale,0));
+  g.add(ped);
+  const pedBase=mkCyl(2.4*scale,2.4*scale,0.6*scale,16, matCraneDark, new THREE.Vector3(0,0.3*scale,0));
+  g.add(pedBase);
+  // Slewing ring
+  const slew=mkCyl(2.0*scale,2.0*scale,0.5*scale,16, matCraneDark, new THREE.Vector3(0,5.2*scale,0));
+  g.add(slew);
+  // Boom pivot structure
+  const boomGroup=new THREE.Group();
+  boomGroup.position.set(0,5.45*scale,0);
+  g.add(boomGroup);
+  // A-frame
+  const aframe=mkBox(1.1*scale,4.0*scale,0.35*scale, matCraneDark, new THREE.Vector3(-0.9*scale,1.2*scale,0));
+  aframe.rotation.z=-0.18;
+  boomGroup.add(aframe);
+  // Main boom (lattice style as box with truss)
+  const boomLen=31*scale; // ~43m reach scaled down for viz (actual 43m, we scale 31 for compact)
+  const boom=mkBox(boomLen,1.1*scale,1.1*scale, matCrane, new THREE.Vector3(boomLen/2,0.2*scale,0));
+  boom.rotation.z= 0.42; // elevated ~24deg => reach approx 15m horizontal at low, 43m at flat
+  boomGroup.add(boom);
+  // Truss details along boom (diagonals)
+  for(let i=2;i<boomLen-2;i+=3){
+    const d1=mkBox(0.18,0.82,0.82, matCraneDark, new THREE.Vector3(i,0.2*scale,0));
+    d1.rotation.z=0.42;
+    boomGroup.add(d1);
+  }
+  // Hook block
+  const hookLine=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06, 9*scale, 6), new THREE.MeshStandardMaterial({color:0x111111}));
+  hookLine.position.set(boomLen* Math.cos(0.42) -0.2, -4*scale, 0);
+  boomGroup.add(hookLine);
+  const hook=mkBox(0.9*scale,0.65*scale,0.45*scale, new THREE.MeshStandardMaterial({color:0x222222}), new THREE.Vector3(boomLen* Math.cos(0.42)-0.2, -8.5*scale,0));
+  boomGroup.add(hook);
+  // Counterweight
+  const cw=mkBox(2.2*scale,1.4*scale,1.8*scale, matCraneDark, new THREE.Vector3(-2.4*scale,0.1*scale,0));
+  boomGroup.add(cw);
+  // store for animation
+  g.userData.boomGroup=boomGroup;
+  g.userData.boom=boom;
+  g.userData.hookLine=hookLine;
+  g.userData.hook=hook;
+  return g;
+}
+const crane1=createCrane(10, 12.5, 1.02); // forward starboard
+const crane2=createCrane(-8, 12.5, 1.02); // aft starboard
+vessel.add(crane1); vessel.add(crane2);
+// Aux crane port side smaller
+const auxCrane=createCrane(0, -13, 0.62);
+auxCrane.scale.set(1,1,1);
+vessel.add(auxCrane);
+auxCrane.rotation.y=Math.PI; // face opposite
+
+// Thrusters (under hull)
+for(let i=0;i<3;i++){
+  const thr=mkCyl(1.35,1.35,1.0,16, matThruster, new THREE.Vector3(-30 + i*22, -2.8, 0));
+  thr.rotation.x=Math.PI/2;
+  vessel.add(thr);
+  const prop=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.22, 3), new THREE.MeshStandardMaterial({color:0x444a5a, metalness:0.6}));
+  prop.position.copy(thr.position); prop.position.y -=0.55; prop.rotation.x=Math.PI/2;
+  vessel.add(prop);
+  thr.userData.prop=prop;
+}
+for(let i=0;i<3;i++){
+  const bowThr=mkCyl(0.95,0.95,2.2,14, matThruster, new THREE.Vector3(38, -1.2, -10 + i*10));
+  bowThr.rotation.z=Math.PI/2;
+  vessel.add(bowThr);
+}
+
+// Railings around deck (simplified)
+const railMat=new THREE.MeshStandardMaterial({color:0xd0d8e8});
+function addRailing(x1,x2,z){
+  const h=1.05;
+  const bar=mkBox(Math.abs(x2-x1),0.07,0.07, railMat, new THREE.Vector3((x1+x2)/2, hullH-1.2+0.35+h, z));
+  vessel.add(bar);
+  const bar2=mkBox(Math.abs(x2-x1),0.07,0.07, railMat, new THREE.Vector3((x1+x2)/2, hullH-1.2+0.35+h-0.35, z));
+  vessel.add(bar2);
+  for(let x=x1;x<=x2;x+=5){
+    const post=mkCyl(0.05,0.05,1.05,6, railMat, new THREE.Vector3(x, hullH-1.2+0.35+0.52, z));
+    vessel.add(post);
+  }
+}
+addRailing(-hullW/2+1, hullW/2-10, hullD/2-0.8);
+addRailing(-hullW/2+1, hullW/2-10, -hullD/2+0.8);
+addRailing(-hullW/2+1, -hullW/2+1, 0); // bow? simplify
+
+// Dimension helpers (ground lines)
+function addDimLine(a,b, label){
+  const pts=[a,b];
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  const mat=new THREE.LineDashedMaterial({color:0x00d0ff, linewidth:1, dashSize:2, gapSize:1.2});
+  const line=new THREE.Line(geo, mat);
+  line.computeLineDistances();
+  vessel.add(line);
+}
+
+// Labels via CSS2D
+function addLabel(text, pos){
+  const div=document.createElement('div');
+  div.className='label';
+  div.innerHTML=text;
+  const lab=new CSS2DObject(div);
+  lab.position.copy(pos);
+  vessel.add(lab);
+  return {div, lab};
+}
+addLabel('LOA <small>101.2m</small>', new THREE.Vector3(0, hullH-1.2+1.2, hullD/2+4));
+addLabel('Beam <small>44.0m</small>', new THREE.Vector3(hullW/2+4, hullH-1.2+1.2, 0));
+addLabel('Deck <small>1,950m²</small>', new THREE.Vector3(0, hullH-1.2+2.0, 0));
+addLabel('Leg <small>107m</small>', new THREE.Vector3(34, 32, 15.5));
+addLabel('WD <small>80m</small>', new THREE.Vector3(34, -6, 15.5));
+addLabel('Crane <small>190T @15m</small>', new THREE.Vector3(10, 16, 12.5));
+addLabel('Helideck <small>Ø22.2m</small>', new THREE.Vector3(44.5, 5.5, 0));
+
+// Hotspot dots (CSS2D with pulse)
+const hotData=[
+  { id:'hull', pos:new THREE.Vector3(0, 2.2, 0), title:'Hull & Deck — 1,950m² @ 5.0/7.5 MT/m²' },
+  { id:'legs', pos:new THREE.Vector3(34, 8, 15.5), title:'Leg #1 — K-braced lattice 107m / 90m usable' },
+  { id:'cranes', pos:new THREE.Vector3(10, 10, 12.5), title:'Twin WMMP 190T — 35T @43m' },
+  { id:'dp', pos:new THREE.Vector3(-30, -2.8, 0), title:'Azimuth 1300kW ×3 + Bow 1100kW ×3 • DP-2' },
+  { id:'heli', pos:new THREE.Vector3(44.5, 3.5, 0), title:'Helideck 22.2m • S92/S61N • HELIDK(SRF)' },
+  { id:'jacking', pos:new THREE.Vector3(-34, 4, -15.5), title:'Jacking 72 pinions • 0.8/1.2 m/min' },
+];
+hotData.forEach(h=>{
+  const div=document.createElement('div');
+  div.style.cssText='width:14px;height:14px;border-radius:999px;background:radial-gradient(circle at 30% 30%,#fff,#00d0ff);border:2px solid #001826;box-shadow:0 0 0 6px rgba(0,208,255,0.22),0 4px 16px rgba(0,208,255,0.6);cursor:pointer;pointer-events:auto';
+  div.title=h.title;
+  const obj=new CSS2DObject(div);
+  obj.position.copy(h.pos);
+  obj.layers.set(0);
+  vessel.add(obj);
+  div.addEventListener('click', ()=> focusHot(h.id));
+  div.addEventListener('mouseenter', ()=> showTip(h.title, div));
+  div.addEventListener('mouseleave', ()=> hideTip());
+});
+
+// --- Controls: auto vs manual ---
+let autoRotate=true;
+let autoSpeed=0.6;
+const autoToggle=document.getElementById('autoToggle');
+const autoLabel=document.getElementById('autoLabel');
+const speedRange=document.getElementById('speedRange');
+const speedVal=document.getElementById('speedVal');
+function syncAuto(){
+  autoToggle.classList.toggle('on', autoRotate);
+  autoLabel.textContent = autoRotate ? 'Auto ON' : 'Auto OFF';
+  controls.autoRotate = autoRotate;
+  controls.autoRotateSpeed = autoSpeed;
+}
+autoToggle.addEventListener('click', ()=>{ autoRotate=!autoRotate; syncAuto(); });
+speedRange.addEventListener('input', e=>{ autoSpeed=parseFloat(e.target.value); speedVal.textContent=autoSpeed.toFixed(1)+'×'; controls.autoRotateSpeed=autoSpeed; });
+syncAuto();
+// pause auto on drag
+controls.addEventListener('start', ()=>{ if(autoRotate){ controls.autoRotate=false; }});
+controls.addEventListener('end', ()=>{ if(autoRotate){ controls.autoRotate=true; }});
+
+// Camera presets
+const presets={
+  bow: { pos:[82, 26, 10], target:[8, 6, 0] },
+  stern:{ pos:[-92, 28, 8], target:[-8, 6, 0] },
+  port:{ pos:[0, 34, 92], target:[0, 8, 0] },
+  starboard:{ pos:[2, 18, -88], target:[0, 6, 0] },
+  top:{ pos:[2, 112, 2], target:[0, 6, 0] },
+  helideck:{ pos:[78, 18, 22], target:[44.5, 3.5, 0] },
+  crane:{ pos:[28, 28, 38], target:[10, 10, 12.5] },
+};
+function goPreset(key){
+  const p=presets[key]; if(!p) return;
+  gsap.to(camera.position, { x:p.pos[0], y:p.pos[1], z:p.pos[2], duration:1.1, ease:'power3.inOut' });
+  gsap.to(controls.target, { x:p.target[0], y:p.target[1], z:p.target[2], duration:1.1, ease:'power3.inOut', onUpdate:()=>controls.update() });
+}
+document.querySelectorAll('[data-view]').forEach(b=> b.addEventListener('click', ()=> goPreset(b.dataset.view)));
+
+// Jacking animation
+let elevated=true;
+const jackingBtn=document.getElementById('jackingBtn');
+let legElevTarget=0; // 0 elevated, -36 submerged?
+function setElevation(isElev){
+  elevated=isElev;
+  jackingBtn.textContent = elevated ? 'Jacking: Elevated' : 'Jacking: Transit';
+  const dy = elevated ? 0 : -38; // lower legs
+  legGroups.forEach(leg=>{
+    gsap.to(leg.position, { y: dy, duration:1.4, ease:'power2.inOut' });
+  });
+  gsap.to(vessel.position, { y: elevated ? 0 : 2.2, duration:1.4, ease:'power2.inOut' });
+  gsap.to(ocean.position, { y: elevated ? -1.2 : -3.8, duration:1.4, ease:'power2.inOut' });
+}
+jackingBtn.addEventListener('click', ()=> setElevation(!elevated));
+setElevation(true);
+
+// Crane slew
+let slewOn=false;
+document.getElementById('craneBtn').addEventListener('click', ()=>{
+  slewOn=!craneOn; // will handle below
+});
+let craneOn=false;
+document.getElementById('craneBtn').addEventListener('click', ()=>{
+  craneOn=!craneOn;
+  document.getElementById('craneBtn').textContent = craneOn ? 'Slewing • ON' : 'Slew Cranes';
+  document.getElementById('craneBtn').style.background = craneOn ? 'var(--accent)' : '';
+  document.getElementById('craneBtn').style.color = craneOn ? '#001826' : '';
+});
+
+// Exploded view
+let exploded=false;
+document.getElementById('explodeBtn').addEventListener('click', ()=>{
+  exploded=!exploded;
+  document.getElementById('explodeBtn').textContent = exploded ? 'Exploded ON' : 'Exploded';
+  if(exploded){
+    // move legs outward, cranes up, accom forward
+    legGroups.forEach((leg,i)=>{
+      const dir = new THREE.Vector3(leg.position.x,0,leg.position.z).normalize();
+      gsap.to(leg.position, { x: leg.position.x + dir.x*6, z: leg.position.z + dir.z*6, duration:1.0, ease:'power3.inOut' });
+    });
+    gsap.to(crane1.position, { y: crane1.position.y+6, duration:1.0, ease:'power3.inOut' });
+    gsap.to(crane2.position, { y: crane2.position.y+6, duration:1.0, ease:'power3.inOut' });
+    gsap.to(accomGroup.position, { x: accomGroup.position.x+8, duration:1.0, ease:'power3.inOut' });
+  } else {
+    legGroups.forEach((leg,i)=>{
+      const base = legPositions[i];
+      gsap.to(leg.position, { x: base.x, z: base.z, duration:1.0, ease:'power3.inOut' });
+    });
+    gsap.to(crane1.position, { y: hullH-1.2+0.35, duration:1.0, ease:'power3.inOut' });
+    gsap.to(crane2.position, { y: hullH-1.2+0.35, duration:1.0, ease:'power3.inOut' });
+    gsap.to(accomGroup.position, { x: 28, duration:1.0, ease:'power3.inOut' });
+  }
+});
+
+// Hotspot focus
+function focusHot(id){
+  const map={
+    hull:'port', legs:'port', cranes:'crane', dp:'starboard', heli:'helideck', jacking:'port'
+  };
+  const view = map[id] || 'port';
+  goPreset(view);
+  // pulse
+  const tipMap={
+    hull:'Hull & 1,950m² Deck — Greenfield heavy modules to 400T',
+    legs:'4× Lattice legs 107m • 90m usable • 80m WD • K-braced • Rectangular spudcans',
+    cranes:'Twin WMMP 190T @15m / 35T @43m • API 2C • Parallel lifts • Aux 50T',
+    dp:'DP-2 Kongsberg • 3×1300kW azimuth + 3×1100kW bow • No tugs • Multi-move',
+    heli:'Helideck Ø22.2m ALU • S92/S61N • CAP437 • 250→500 POB accommodation',
+    jacking:'Electric rack & pinion 72 pinions • 0.8/1.2 m/min • 360t storm • Jetting 50m³/hr'
+  };
+  showToast(tipMap[id]||id);
+}
+document.querySelectorAll('.hot').forEach(el=> el.addEventListener('click', ()=> focusHot(el.dataset.hot)));
+
+// Toast
+let toastTimer;
+function showToast(msg){
+  let el=document.getElementById('toast');
+  if(!el){ el=document.createElement('div'); el.id='toast'; el.style.cssText='position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:12;padding:10px 14px;border-radius:999px;background:rgba(10,18,32,0.92);border:1px solid rgba(0,208,255,0.28);color:#dbe8ff;font:600 12px Inter;backdrop-filter:blur(10px);box-shadow:0 12px 32px rgba(0,0,0,0.4);'; document.body.appendChild(el); }
+  el.textContent=msg; el.style.opacity='1'; el.style.display='block';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=> el.style.display='none', 2600);
+}
+function showTip(text, anchor){
+  const tip=document.getElementById('tip');
+  tip.textContent=text; tip.style.display='block';
+  const r=anchor.getBoundingClientRect();
+  tip.style.left=(r.left - tip.offsetWidth/2 + r.width/2)+'px';
+  tip.style.top=(r.top - tip.offsetHeight - 10)+'px';
+}
+function hideTip(){ document.getElementById('tip').style.display='none'; }
+
+// Demo auto sequence
+let demoRunning=false;
+document.getElementById('demoBtn').addEventListener('click', runDemo);
+function runDemo(){
+  if(demoRunning) return; demoRunning=true;
+  const btn=document.getElementById('demoBtn');
+  btn.textContent='● Running Demo…'; btn.style.background='#00d0ff'; btn.style.color='#001826';
+  const seq=[
+    ()=>{ showToast('① Hull & Deck — 101.2×44m • 1,950m² @ 7.5 MT/m²'); goPreset('port'); },
+    ()=>{ showToast('② Twin 190T Cranes — 35T @43m • Parallel heavy lifts'); goPreset('crane'); craneOn=true; },
+    ()=>{ showToast('③ 4× Lattice Legs — 107m • 80m water depth • Spudcans 11.43×9.6m'); goPreset('bow'); },
+    ()=>{ showToast('④ DP-2 Thrusters — 3×1300kW + 3×1100kW • Multi-move, no tugs'); goPreset('starboard'); },
+    ()=>{ showToast('⑤ Helideck & 500 POB — Ø22.2m • S92/S61N • Hotel-style accommodation'); goPreset('helideck'); },
+    ()=>{ showToast('⑥ Jacking: Elevated → Transit → Elevated (0.8 m/min)'); setElevation(false); },
+    ()=>{ setElevation(true); },
+    ()=>{ showToast('✅ Demo complete — Drag to rotate, scroll to zoom, toggle Auto'); goPreset('port'); demoRunning=false; btn.textContent='▶ Product Demo'; btn.style.background='var(--zmi-red)'; btn.style.color='#fff'; craneOn=false; document.getElementById('craneBtn').textContent='Slew Cranes'; document.getElementById('craneBtn').style.background=''; document.getElementById('craneBtn').style.color=''; }
+  ];
+  let i=0;
+  function next(){ if(i<seq.length){ seq[i++](); setTimeout(next, 1700); } }
+  next();
+}
+
+// GUI (lil-gui) - hidden but powerful
+const gui=new GUI({ title:'QMS Achiever — Tweak', width:310 });
+gui.domElement.style.position='fixed'; gui.domElement.style.top='72px'; gui.domElement.style.right='14px'; gui.domElement.style.zIndex='9';
+const par={ auto:autoRotate, speed:autoSpeed, elevated:true, craneSlew:false, exploded:false, ocean:true, bloom:0.22, exposure:1.15 };
+gui.add(par,'auto').name('Auto Rotate').onChange(v=>{ autoRotate=v; syncAuto(); });
+gui.add(par,'speed',0.1,2.5,0.05).name('Speed ×').onChange(v=>{ autoSpeed=v; speedRange.value=v; speedVal.textContent=v.toFixed(1)+'×'; controls.autoRotateSpeed=v; });
+gui.add(par,'elevated').name('Elevated').onChange(v=> setElevation(v));
+gui.add(par,'craneSlew').name('Slew Cranes').onChange(v=>{ craneOn=v; document.getElementById('craneBtn').textContent=v?'Slewing • ON':'Slew Cranes'; });
+gui.add(par,'exploded').name('Exploded').onChange(v=>{ exploded=v; document.getElementById('explodeBtn').click(); }); // reuse
+gui.add(par,'ocean').name('Ocean Visible').onChange(v=> ocean.visible=v);
+gui.add(par,'bloom',0,0.6,0.02).name('Bloom').onChange(v=> bloomPass.strength=v);
+gui.add(par,'exposure',0.7,1.6,0.02).name('Exposure').onChange(v=> renderer.toneMappingExposure=v);
+gui.close();
+
+// Resize
+window.addEventListener('resize', onResize);
+function onResize(){
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// Animate loop
+let t=0;
+function animate(){
+  requestAnimationFrame(animate);
+  t+=0.016;
+  controls.update();
+  // thruster spin viz
+  vessel.traverse(o=>{
+    if(o.userData && o.userData.prop){
+      o.userData.prop.rotation.y += 0.18 + Math.sin(t)*0.02;
+    }
+  });
+  // crane slew
+  if(craneOn){
+    crane1.userData.boomGroup.rotation.y += 0.008;
+    crane2.userData.boomGroup.rotation.y -= 0.006;
+    auxCrane.userData.boomGroup.rotation.y += 0.007;
+  }
+  // subtle ocean bob for elevated
+  if(elevated){
+    vessel.position.y = Math.sin(t*0.55)*0.12;
+    ocean.position.y = -1.2 + Math.sin(t*0.32)*0.08;
+  }
+  // sun drift
+  sun.position.x = 140 + Math.sin(t*0.06)*12;
+  // render
+  // use composer for bloom+ssao, fallback to renderer if perf low
+  composer.render();
+  labelRenderer.render(scene, camera);
+}
+animate();
+
+// Hide loader after ready
+setTimeout(()=>{
+  document.getElementById('loadText').textContent='PBR • Shadows • DP-2 • Twin Cranes • 1950m² — Ready';
+  setTimeout(()=>{
+    const loader=document.getElementById('loader');
+    gsap.to(loader, { opacity:0, duration:0.7, onComplete:()=> loader.style.display='none' });
+    showToast('Drag to rotate • Scroll to zoom • Auto ON • Try Product Demo ▶');
+  }, 420);
+}, 680);
+
+// FPS badge optional
+let frames=0, last=performance.now();
+function fpsLoop(){
+  frames++; const now=performance.now();
+  if(now-last>1000){
+    const fps=Math.round(frames*1000/(now-last));
+    const b=document.getElementById('fpsBadge');
+    b.textContent=fps+' FPS'; b.style.display='inline-flex';
+    b.style.color = fps>52 ? '#7af0ff' : fps>32 ? '#ffcc00' : '#ff5a5a';
+    frames=0; last=now;
+  }
+  requestAnimationFrame(fpsLoop);
+}
+fpsLoop();
+
+// Touch hint hide after interaction
+let hintShown=true;
+['mousedown','touchstart','wheel'].forEach(ev=> window.addEventListener(ev, ()=>{
+  if(hintShown){ hintShown=false; const h=document.getElementById('orbitHint'); if(h) h.style.display='none'; }
+},{once:true}) );
+
+// Expose for debug
+window.vessel=vessel; window.camera=camera; window.controls=controls;
+</script>
+</body>
+</html>

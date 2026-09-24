@@ -1,0 +1,100 @@
+{
+  "project": "ZMI Holdings - 3D Fleet Product Demonstration Platform",
+  "workspace": "D:\\AI\\_others\\3d-vessels",
+  "objective": "Unreal Engine-level interactive 3D vessel demo using Three.js for product demonstration (auto/manual rotation, dimensions, highlights, capabilities)",
+  "created": "2026-09-24T21:10:00Z",
+  "last_updated": "2026-09-24T21:10:00Z",
+  "status": "LIVE",
+  "source_data": {
+    "website": "https://zmiglobal.com",
+    "fleet_catalog": 77,
+    "jackups": 39,
+    "osvs": 38,
+    "data_files": [
+      "zmi-fleet/fleet_raw.json",
+      "zmi-fleet/fleet_summary.json",
+      "zmi-fleet/fleet_detailed.csv"
+    ]
+  },
+  "phases": [
+    {
+      "phase": 1,
+      "title": "Live Project Implementation Register",
+      "status": "COMPLETED",
+      "tasks": [
+        {"id": "1.1", "task": "Create register (JSON/MD/HTML)", "status": "DONE", "owner": "Muse Spark", "ts": "2026-09-24"},
+        {"id": "1.2", "task": "Wire workspace structure /zmi-fleet + /demo", "status": "DONE"},
+        {"id": "1.3", "task": "Version control ready", "status": "DONE"}
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "Vessel Selection & Spec Freeze",
+      "status": "IN_PROGRESS",
+      "selected_vessel": {
+        "name": "QMS Achiever",
+        "slug": "qms-achiever",
+        "url": "https://zmiglobal.com/fleet/qms-achiever/",
+        "category": "Self-Propelled Jack-Up Barge (Flagship)",
+        "rationale": "Largest class (1950m² deck, 80m WD, 500 POB, 2x190T cranes, DP-2) - ideal product demo hero",
+        "alternatives": ["QMS Gladiator (1x400T)", "QMS Sentinel (2x300T)", "HEA Titan (2500m²)"]
+      },
+      "specs_frozen": true,
+      "tasks": [
+        {"id": "2.1", "task": "Select hero vessel", "status": "DONE"},
+        {"id": "2.2", "task": "Extract full technical specs (hull, legs, cranes, helideck, DP, POB)", "status": "DONE"},
+        {"id": "2.3", "task": "Define dimensions for 3D scale (1 unit = 1 meter)", "status": "DONE"}
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "Unreal-Level Three.js Build",
+      "status": "IN_PROGRESS",
+      "engine": "Three.js r160 + OrbitControls + CSS2DRenderer + postprocessing + lil-gui + GSAP",
+      "target_file": "demo/qms-achiever/index.html",
+      "features": [
+        "PBR hull/deck/accommodation/cranes/legs/spudcans/helideck",
+        "Physically based lighting (ACES, shadow, envMap)",
+        "Ocean plane + sky dome",
+        "Scale-accurate dimensions (101.2 x 44 x 6.5m + 110m legs)",
+        "Feature hotspots + capability cards",
+        "Auto-rotate vs manual OrbitControls",
+        "Camera presets (Bow, Stern, Port, Starboard, Top, Helideck, Crane)",
+        "Leg jacking animation + crane slew/luff + thruster viz",
+        "Dimension overlays + measurement guides",
+        "Performance HUD + responsive"
+      ],
+      "tasks": [
+        {"id": "3.1", "task": "Scene, renderer, camera, lights, environment", "status": "PENDING"},
+        {"id": "3.2", "task": "Model hull + deck + accommodation + helideck", "status": "PENDING"},
+        {"id": "3.3", "task": "Model 4 lattice legs + spudcans + rack-pinion", "status": "PENDING"},
+        {"id": "3.4", "task": "Model twin main cranes (WMMP 190T) + aux crane", "status": "PENDING"},
+        {"id": "3.5", "task": "Ocean / sky / postprocessing / shadows", "status": "PENDING"},
+        {"id": "3.6", "task": "Hotspots / labels / dimension lines", "status": "PENDING"},
+        {"id": "3.7", "task": "Controls: auto/manual rotation, GUI, animations", "status": "PENDING"},
+        {"id": "3.8", "task": "Product demo mode + info panels", "status": "PENDING"}
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "QA & Demonstration",
+      "status": "QUEUED",
+      "tasks": [
+        {"id": "4.1", "task": "Local serve & interaction test", "status": "PENDING"},
+        {"id": "4.2", "task": "Cross-browser / mobile responsive check", "status": "PENDING"},
+        {"id": "4.3", "task": "Handover video + screenshot capture", "status": "PENDING"}
+      ]
+    }
+  ],
+  "kpis": {
+    "model_fidelity": "Unreal-level PBR, shadow, AO, reflections",
+    "interaction": "OrbitControls + auto-rotate toggle + manual drag + scroll zoom + touch",
+    "demo_readiness": "One-click product pitch with highlights & specs"
+  },
+  "next_action": "Build QMS Achiever demo at demo/qms-achiever/index.html",
+  "owner": "Muse Spark (OpenCode)",
+  "live_log": [
+    {"ts": "2026-09-24T21:10:00Z", "event": "Register created, 77 vessels scraped, workspace initialized"},
+    {"ts": "2026-09-24T21:11:00Z", "event": "QMS Achiever selected as hero vessel (1950m², 80m WD, 2x190T)"}
+  ]
+}
