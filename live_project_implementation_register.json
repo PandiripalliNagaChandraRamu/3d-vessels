@@ -30,7 +30,7 @@
     {
       "phase": 2,
       "title": "Vessel Selection & Spec Freeze",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "selected_vessel": {
         "name": "QMS Achiever",
         "slug": "qms-achiever",
@@ -49,7 +49,7 @@
     {
       "phase": 3,
       "title": "Unreal-Level Three.js Build",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "engine": "Three.js r160 + OrbitControls + CSS2DRenderer + postprocessing + lil-gui + GSAP",
       "target_file": "demo/qms-achiever/index.html",
       "features": [
@@ -65,14 +65,14 @@
         "Performance HUD + responsive"
       ],
       "tasks": [
-        {"id": "3.1", "task": "Scene, renderer, camera, lights, environment", "status": "PENDING"},
-        {"id": "3.2", "task": "Model hull + deck + accommodation + helideck", "status": "PENDING"},
-        {"id": "3.3", "task": "Model 4 lattice legs + spudcans + rack-pinion", "status": "PENDING"},
-        {"id": "3.4", "task": "Model twin main cranes (WMMP 190T) + aux crane", "status": "PENDING"},
-        {"id": "3.5", "task": "Ocean / sky / postprocessing / shadows", "status": "PENDING"},
-        {"id": "3.6", "task": "Hotspots / labels / dimension lines", "status": "PENDING"},
-        {"id": "3.7", "task": "Controls: auto/manual rotation, GUI, animations", "status": "PENDING"},
-        {"id": "3.8", "task": "Product demo mode + info panels", "status": "PENDING"}
+        {"id": "3.1", "task": "Scene, renderer, camera, lights, environment", "status": "DONE"},
+        {"id": "3.2", "task": "Model hull + deck + accommodation + helideck", "status": "DONE"},
+        {"id": "3.3", "task": "Model 4 lattice legs + spudcans + rack-pinion", "status": "DONE"},
+        {"id": "3.4", "task": "Model twin main cranes (WMMP 190T) + aux crane", "status": "DONE"},
+        {"id": "3.5", "task": "Ocean / sky / postprocessing / shadows", "status": "DONE"},
+        {"id": "3.6", "task": "Hotspots / labels / dimension lines", "status": "DONE"},
+        {"id": "3.7", "task": "Controls: auto/manual rotation, GUI, animations", "status": "DONE"},
+        {"id": "3.8", "task": "Product demo mode + info panels", "status": "DONE"}
       ]
     },
     {
