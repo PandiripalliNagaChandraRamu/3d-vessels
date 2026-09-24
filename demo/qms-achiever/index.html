@@ -219,12 +219,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+import { Water } from 'three/addons/objects/Water.js';
+import { Sky } from 'three/addons/objects/Sky.js';
 import gsap from 'gsap';
 import { GUI } from 'lil-gui';
 
@@ -240,8 +239,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x02070e);
-scene.fog = new THREE.Fog(0x02070e, 260, 720);
+scene.fog = new THREE.FogExp2(0x9fc3dd, 0.0016);
 
 const camera = new THREE.PerspectiveCamera(48, window.innerWidth/window.innerHeight, 0.1, 2000);
 camera.position.set(118, 58, 118);
@@ -257,8 +255,8 @@ controls.target.set(0, 8, 0);
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.6;
 
-// Lighting
-const sun = new THREE.DirectionalLight(0xffffff, 3.2);
+// Lighting — sun tuned to match physical Sky (updated below via updateSunPosition)
+const sun = new THREE.DirectionalLight(0xffffff, 3.6);
 sun.position.set(140, 120, 70);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048,2048);
@@ -266,30 +264,56 @@ sun.shadow.camera.near = 1; sun.shadow.camera.far = 520;
 sun.shadow.camera.left=-160; sun.shadow.camera.right=160; sun.shadow.camera.top=120; sun.shadow.camera.bottom=-120;
 sun.shadow.bias = -0.0006;
 scene.add(sun);
-scene.add(new THREE.HemisphereLight(0x7fb4ff, 0x02070e, 0.85));
-const fill = new THREE.DirectionalLight(0x8ec8ff, 0.9); fill.position.set(-80, 45, -90); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xbcd8ff, 0x0a2338, 0.55));
+const fill = new THREE.DirectionalLight(0x8ec8ff, 0.55); fill.position.set(-80, 45, -90); scene.add(fill);
 
-// Env
+// --- Physical Sky (Preetham/Hosek atmospheric scattering) ---
+const sky = new Sky();
+sky.scale.setScalar(4500);
+scene.add(sky);
+const sunPos = new THREE.Vector3();
+const skyParams = { turbidity: 6.5, rayleigh: 1.9, mieCoefficient: 0.0045, mieDirectionalG: 0.82, elevation: 22, azimuth: 165, exposure: 0.58 };
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+let skyRT;
+function updateSky(){
+  const u = sky.material.uniforms;
+  u.turbidity.value = skyParams.turbidity;
+  u.rayleigh.value = skyParams.rayleigh;
+  u.mieCoefficient.value = skyParams.mieCoefficient;
+  u.mieDirectionalG.value = skyParams.mieDirectionalG;
+  const phi = THREE.MathUtils.degToRad(90 - skyParams.elevation);
+  const theta = THREE.MathUtils.degToRad(skyParams.azimuth);
+  sunPos.setFromSphericalCoords(1, phi, theta);
+  u.sunPosition.value.copy(sunPos);
+  water.material.uniforms['sunDirection'].value.copy(sunPos).normalize();
+  sun.position.copy(sunPos).multiplyScalar(180);
+  sun.target.position.set(0,0,0);
+  renderer.toneMappingExposure = skyParams.exposure;
+  if(skyRT) skyRT.dispose();
+  skyRT = pmrem.fromScene(sky, 0.02);
+  scene.environment = skyRT.texture;
+  scene.fog.color.copy(new THREE.Color(0x9fc3dd)).lerp(new THREE.Color(0xffe9c9), 0.18);
+}
 
-// Ocean
-const oceanGeo = new THREE.PlaneGeometry(1800, 1800, 1,1);
-const oceanMat = new THREE.MeshStandardMaterial({ color:0x0a1e2e, roughness:0.32, metalness:0.12 });
-const ocean = new THREE.Mesh(oceanGeo, oceanMat);
-ocean.rotation.x = -Math.PI/2;
-ocean.position.y = -1.2;
-ocean.receiveShadow = true;
-scene.add(ocean);
-// subtle grid underwater
-const grid = new THREE.GridHelper(900, 60, 0x1a3a5a, 0x102a44);
-grid.position.y = -1.15;
-scene.add(grid);
-
-// Sky dome
-const skyGeo = new THREE.SphereGeometry(900, 32, 22);
-const skyMat = new THREE.MeshStandardMaterial({ color:0x0a1a2f, side:THREE.BackSide, emissive:0x061022, emissiveIntensity:0.6, roughness:1 });
-const sky = new THREE.Mesh(skyGeo, skyMat); scene.add(sky);
+// --- Photoreal animated Water (Three.js Water shader) ---
+const waterGeo = new THREE.PlaneGeometry(4000, 4000);
+const water = new Water(waterGeo, {
+  textureWidth: 1024,
+  textureHeight: 1024,
+  waterNormals: new THREE.TextureLoader().load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/textures/waternormals.jpg', tex=>{ tex.wrapS = tex.wrapT = THREE.RepeatWrapping; }),
+  sunDirection: new THREE.Vector3(0.3,0.6,0.7),
+  sunColor: 0xfff2d9,
+  waterColor: 0x0b2a3d,
+  distortionScale: 3.0,
+  fog: !!scene.fog,
+  alpha: 1.0
+});
+water.rotation.x = -Math.PI/2;
+water.position.y = -1.2;
+water.material.uniforms['size'].value = 3.2;
+scene.add(water);
+updateSky();
+const ocean = water; // legacy alias used elsewhere in this file
 
 // CSS2D renderer for labels
 const labelRenderer = new CSS2DRenderer();
