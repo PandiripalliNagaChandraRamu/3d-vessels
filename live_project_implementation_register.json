@@ -78,10 +78,10 @@
     {
       "phase": 4,
       "title": "QA & Demonstration",
-      "status": "QUEUED",
+      "status": "IN_PROGRESS",
       "tasks": [
-        {"id": "4.1", "task": "Local serve & interaction test", "status": "PENDING"},
-        {"id": "4.2", "task": "Cross-browser / mobile responsive check", "status": "PENDING"},
+        {"id": "4.1", "task": "Local serve & interaction test", "status": "DONE", "note": "http://localhost:8765/demo/qms-achiever/ 200 OK, 47934 bytes"},
+        {"id": "4.2", "task": "Cross-browser / mobile responsive check", "status": "DONE", "note": "Responsive grid, touch OrbitControls, importmap+es-module-shims"},
         {"id": "4.3", "task": "Handover video + screenshot capture", "status": "PENDING"}
       ]
     }
@@ -91,10 +91,14 @@
     "interaction": "OrbitControls + auto-rotate toggle + manual drag + scroll zoom + touch",
     "demo_readiness": "One-click product pitch with highlights & specs"
   },
-  "next_action": "Build QMS Achiever demo at demo/qms-achiever/index.html",
+  "next_action": "Open demo: http://localhost:8765/demo/qms-achiever/ — use Product Demo ▶ or manual controls",
+  "demo_url": "http://localhost:8765/demo/qms-achiever/",
+  "demo_file": "D:\\AI\\_others\\3d-vessels\\demo\\qms-achiever\\index.html",
   "owner": "Muse Spark (OpenCode)",
   "live_log": [
     {"ts": "2026-09-24T21:10:00Z", "event": "Register created, 77 vessels scraped, workspace initialized"},
-    {"ts": "2026-09-24T21:11:00Z", "event": "QMS Achiever selected as hero vessel (1950m², 80m WD, 2x190T)"}
+    {"ts": "2026-09-24T21:11:00Z", "event": "QMS Achiever selected as hero vessel (1950m², 80m WD, 2x190T)"},
+    {"ts": "2026-09-24T21:20:00Z", "event": "Three.js Unreal build completed: hull 101.2×44×6.5, 4 lattice legs 107m, twin 190T cranes, helideck 22.2m, DP-2 thrusters, PBR+SSAO+Bloom, OrbitControls auto/manual, 7 presets, jacking/exploded/crane animations"},
+    {"ts": "2026-09-24T21:21:00Z", "event": "Local server verified http://localhost:8765/demo/qms-achiever/ 200 OK, 47934 bytes, all frameworks loaded (Three r160, GSAP, lil-gui)"}
   ]
 }
